@@ -436,6 +436,10 @@ public final class DefaultHlsPlaylistTracker
     private long blacklistUntilMs;
     private boolean loadPending;
     private IOException playlistError;
+    private long refLoadMs;
+    private long refSegmentNum = -1;
+    private static final int DEFAULT_REFRESH_DELAY_US = 100000;
+    private long refreshDelayUs = 0;
 
     public MediaPlaylistBundle(HlsUrl playlistUrl) {
       this.playlistUrl = playlistUrl;
@@ -600,44 +604,56 @@ public final class DefaultHlsPlaylistTracker
       long currentTimeMs = SystemClock.elapsedRealtime();
       lastSnapshotLoadMs = currentTimeMs;
       playlistSnapshot = getLatestPlaylistSnapshot(oldPlaylist, loadedPlaylist);
+      if (refSegmentNum == -1 || refreshDelayUs == DEFAULT_REFRESH_DELAY_US ||
+          playlistSnapshot.mediaSequence > (oldPlaylist.mediaSequence + 1)) {
+        refSegmentNum = playlistSnapshot.mediaSequence + playlistSnapshot.segments.size() - 1;
+        refLoadMs = lastSnapshotLoadMs;
+      }
       if (playlistSnapshot != oldPlaylist) {
+        long currentSegmentNum = playlistSnapshot.mediaSequence + playlistSnapshot.segments.size() - 1;
         playlistError = null;
         lastSnapshotChangeMs = currentTimeMs;
         onPlaylistUpdated(playlistUrl, playlistSnapshot);
-      } else if (!playlistSnapshot.hasEndTag) {
-        if (loadedPlaylist.mediaSequence + loadedPlaylist.segments.size()
-            < playlistSnapshot.mediaSequence) {
-          // TODO: Allow customization of playlist resets handling.
-          // The media sequence jumped backwards. The server has probably reset. We do not try
-          // blacklisting in this case.
-          playlistError = new PlaylistResetException(playlistUrl.url);
-          notifyPlaylistError(playlistUrl, C.TIME_UNSET);
-        } else if (currentTimeMs - lastSnapshotChangeMs
-            > C.usToMs(playlistSnapshot.targetDurationUs)
-                * PLAYLIST_STUCK_TARGET_DURATION_COEFFICIENT) {
-          // TODO: Allow customization of stuck playlists handling.
-          playlistError = new PlaylistStuckException(playlistUrl.url);
-          long blacklistDurationMs =
-              loadErrorHandlingPolicy.getBlacklistDurationMsFor(
-                  C.DATA_TYPE_MANIFEST, loadDurationMs, playlistError, /* errorCount= */ 1);
-          notifyPlaylistError(playlistUrl, blacklistDurationMs);
-          if (blacklistDurationMs != C.TIME_UNSET) {
-            blacklistPlaylist(blacklistDurationMs);
+        if (currentSegmentNum != refSegmentNum || refreshDelayUs == DEFAULT_REFRESH_DELAY_US) {
+          long diffUs = ((currentTimeMs - refLoadMs) * 1000) -
+              (currentSegmentNum - refSegmentNum) * playlistSnapshot.targetDurationUs;
+          refreshDelayUs = Math.max(0, playlistSnapshot.targetDurationUs - diffUs);
+        } else {
+          refreshDelayUs = DEFAULT_REFRESH_DELAY_US;
+        }
+      } else {
+        refreshDelayUs = DEFAULT_REFRESH_DELAY_US;
+        if (!playlistSnapshot.hasEndTag) {
+          if (loadedPlaylist.mediaSequence + loadedPlaylist.segments.size()
+              < playlistSnapshot.mediaSequence) {
+            // TODO: Allow customization of playlist resets handling.
+            // The media sequence jumped backwards. The server has probably reset. We do not try
+            // blacklisting in this case.
+            playlistError = new PlaylistResetException(playlistUrl.url);
+            notifyPlaylistError(playlistUrl, C.TIME_UNSET);
+          } else if (currentTimeMs - lastSnapshotChangeMs
+              > C.usToMs(playlistSnapshot.targetDurationUs)
+              * PLAYLIST_STUCK_TARGET_DURATION_COEFFICIENT) {
+            // TODO: Allow customization of stuck playlists handling.
+            playlistError = new PlaylistStuckException(playlistUrl.url);
+            long blacklistDurationMs =
+                loadErrorHandlingPolicy.getBlacklistDurationMsFor(
+                    C.DATA_TYPE_MANIFEST, loadDurationMs, playlistError, /* errorCount= */ 1);
+            notifyPlaylistError(playlistUrl, blacklistDurationMs);
+            if (blacklistDurationMs != C.TIME_UNSET) {
+              blacklistPlaylist(blacklistDurationMs);
+            }
           }
         }
       }
       // Do not allow the playlist to load again within the target duration if we obtained a new
       // snapshot, or half the target duration otherwise.
-      earliestNextLoadTimeMs =
-          currentTimeMs
-              + C.usToMs(
-                  playlistSnapshot != oldPlaylist
-                      ? playlistSnapshot.targetDurationUs
-                      : (playlistSnapshot.targetDurationUs / 2));
+      earliestNextLoadTimeMs = currentTimeMs + C.usToMs(refreshDelayUs);
       // Schedule a load if this is the primary playlist and it doesn't have an end tag. Else the
       // next load will be scheduled when refreshPlaylist is called, or when this playlist becomes
       // the primary.
-      if (playlistUrl == primaryHlsUrl && !playlistSnapshot.hasEndTag) {
+      // TODO : To ensure audio playlist also gets loaded check for primary playlist is disabled
+      if (/*playlistUrl == primaryHlsUrl &&*/ !playlistSnapshot.hasEndTag) {
         loadPlaylist();
       }
     }
