@@ -473,7 +473,7 @@ public final class HlsMediaSource extends BaseMediaSource
       List<HlsMediaPlaylist.Segment> segments = playlist.segments;
       if (windowDefaultStartPositionUs == C.TIME_UNSET) {
         windowDefaultStartPositionUs = segments.isEmpty() ? 0
-            : segments.get(Math.max(0, segments.size() - 3)).relativeStartTimeUs;
+            : segments.get(Math.max(0, segments.size() - 1)).relativeStartTimeUs;
       }
       timeline =
           new SinglePeriodTimeline(
