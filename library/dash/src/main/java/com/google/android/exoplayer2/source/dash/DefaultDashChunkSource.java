@@ -760,7 +760,12 @@ public class DefaultDashChunkSource implements DashChunkSource {
       if (availableSegmentCount == DashSegmentIndex.INDEX_UNBOUNDED) {
         // The index is itself unbounded. We need to use the current time to calculate the range of
         // available segments.
+        // TODO : System clock may not be in sync with the UTC time. Need an NTP-synced time here.
         long liveEdgeTimeUs = nowUnixTimeUs - C.msToUs(manifest.availabilityStartTimeMs);
+        if (representation instanceof Representation.MultiSegmentRepresentation) {
+          liveEdgeTimeUs +=
+              ((Representation.MultiSegmentRepresentation)representation).getAvailabilityTimeOffsetUs();
+        }
         long periodStartUs = C.msToUs(manifest.getPeriod(periodIndex).startMs);
         long liveEdgeTimeInPeriodUs = liveEdgeTimeUs - periodStartUs;
         // getSegmentNum(liveEdgeTimeInPeriodUs) will not be completed yet, so subtract one to get

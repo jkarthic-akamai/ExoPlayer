@@ -774,6 +774,8 @@ public class DashManifestParser extends DefaultHandler
         parent != null ? parent.presentationTimeOffset : 0);
     long duration = parseLong(xpp, "duration", parent != null ? parent.duration : C.TIME_UNSET);
     long startNumber = parseLong(xpp, "startNumber", parent != null ? parent.startNumber : 1);
+    float availabilityTimeOffset = parseFloat(xpp, "availabilityTimeOffset",
+        parent != null ? parent.availabilityTimeOffset : (float)0.0);
     UrlTemplate mediaTemplate = parseUrlTemplate(xpp, "media",
         parent != null ? parent.mediaTemplate : null);
     UrlTemplate initializationTemplate = parseUrlTemplate(xpp, "initialization",
@@ -799,7 +801,8 @@ public class DashManifestParser extends DefaultHandler
     }
 
     return buildSegmentTemplate(initialization, timescale, presentationTimeOffset,
-        startNumber, duration, timeline, initializationTemplate, mediaTemplate);
+        startNumber, duration, availabilityTimeOffset, timeline, initializationTemplate,
+        mediaTemplate);
   }
 
   protected SegmentTemplate buildSegmentTemplate(
@@ -808,11 +811,12 @@ public class DashManifestParser extends DefaultHandler
       long presentationTimeOffset,
       long startNumber,
       long duration,
+      float availabilityTimeOffset,
       List<SegmentTimelineElement> timeline,
       UrlTemplate initializationTemplate,
       UrlTemplate mediaTemplate) {
-    return new SegmentTemplate(initialization, timescale, presentationTimeOffset,
-        startNumber, duration, timeline, initializationTemplate, mediaTemplate);
+    return new SegmentTemplate(initialization, timescale, presentationTimeOffset, startNumber,
+            duration, availabilityTimeOffset, timeline, initializationTemplate, mediaTemplate);
   }
 
   /**
@@ -1315,6 +1319,11 @@ public class DashManifestParser extends DefaultHandler
   protected static long parseLong(XmlPullParser xpp, String name, long defaultValue) {
     String value = xpp.getAttributeValue(null, name);
     return value == null ? defaultValue : Long.parseLong(value);
+  }
+
+  protected static float parseFloat(XmlPullParser xpp, String name, float defaultValue) {
+    String value = xpp.getAttributeValue(null, name);
+    return value == null ? defaultValue : Float.parseFloat(value);
   }
 
   protected static String parseString(XmlPullParser xpp, String name, String defaultValue) {

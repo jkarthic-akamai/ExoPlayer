@@ -341,6 +341,10 @@ public abstract class Representation {
       return segmentBase.isExplicit();
     }
 
+    public long getAvailabilityTimeOffsetUs() {
+      return (long)(segmentBase.availabilityTimeOffset * 1000000.0);
+    }
+
   }
 
 }

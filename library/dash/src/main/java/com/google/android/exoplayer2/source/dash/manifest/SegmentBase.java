@@ -28,6 +28,7 @@ public abstract class SegmentBase {
   /* package */ final RangedUri initialization;
   /* package */ final long timescale;
   /* package */ final long presentationTimeOffset;
+  public float availabilityTimeOffset;
 
   /**
    * @param initialization A {@link RangedUri} corresponding to initialization data, if such data
@@ -40,6 +41,7 @@ public abstract class SegmentBase {
     this.initialization = initialization;
     this.timescale = timescale;
     this.presentationTimeOffset = presentationTimeOffset;
+    availabilityTimeOffset = 0;
   }
 
   /**
@@ -289,6 +291,8 @@ public abstract class SegmentBase {
      * @param duration The duration of each segment in the case of fixed duration segments. The
      *     value in seconds is the division of this value and {@code timescale}. If {@code
      *     segmentTimeline} is non-null then this parameter is ignored.
+     * @param availabilityTimeOffset The Availability Time Offset. The value in seconds before
+     *     which the segments are available for chunked download.
      * @param segmentTimeline A segment timeline corresponding to the segments. If null, then
      *     segments are assumed to be of fixed duration as specified by the {@code duration}
      *     parameter.
@@ -303,6 +307,7 @@ public abstract class SegmentBase {
         long presentationTimeOffset,
         long startNumber,
         long duration,
+        float availabilityTimeOffset,
         List<SegmentTimelineElement> segmentTimeline,
         UrlTemplate initializationTemplate,
         UrlTemplate mediaTemplate) {
@@ -310,6 +315,7 @@ public abstract class SegmentBase {
           duration, segmentTimeline);
       this.initializationTemplate = initializationTemplate;
       this.mediaTemplate = mediaTemplate;
+      this.availabilityTimeOffset = availabilityTimeOffset;
     }
 
     @Override
