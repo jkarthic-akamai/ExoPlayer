@@ -355,7 +355,7 @@ public final class DashMediaSource extends BaseMediaSource {
    * SourceInfoRefreshListener#onSourceInfoRefreshed(MediaSource, Timeline, Object)} when the
    * source's {@link Timeline} is changing dynamically (for example, for incomplete live streams).
    */
-  private static final int NOTIFY_MANIFEST_INTERVAL_MS = 5000;
+  private static final int NOTIFY_MANIFEST_INTERVAL_MS = 100;
   /**
    * The minimum default start position for live streams, relative to the start of the live window.
    */
