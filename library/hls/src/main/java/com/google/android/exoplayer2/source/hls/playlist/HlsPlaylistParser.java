@@ -74,6 +74,7 @@ public final class HlsPlaylistParser implements ParsingLoadable.Parser<HlsPlayli
   private static final String TAG_KEY = "#EXT-X-KEY";
   private static final String TAG_BYTERANGE = "#EXT-X-BYTERANGE";
   private static final String TAG_GAP = "#EXT-X-GAP";
+  private static final String TAG_PREFETCH = "#EXT-X-PREFETCH";
 
   private static final String TYPE_AUDIO = "AUDIO";
   private static final String TYPE_VIDEO = "VIDEO";
@@ -592,7 +593,7 @@ public final class HlsPlaylistParser implements ParsingLoadable.Parser<HlsPlayli
         hasIndependentSegmentsTag = true;
       } else if (line.equals(TAG_ENDLIST)) {
         hasEndTag = true;
-      } else if (!line.startsWith("#")) {
+      } else if (!line.startsWith("#") || line.startsWith(TAG_PREFETCH)) {
         String segmentEncryptionIV;
         if (encryptionKeyUri == null) {
           segmentEncryptionIV = null;
@@ -618,7 +619,10 @@ public final class HlsPlaylistParser implements ParsingLoadable.Parser<HlsPlayli
             playlistProtectionSchemes = new DrmInitData(encryptionScheme, playlistSchemeDatas);
           }
         }
-
+        if (line.startsWith(TAG_PREFETCH)) {
+          segmentDurationUs = targetDurationUs;
+          line = line.substring(line.indexOf(':') + 1);
+        }
         segments.add(
             new Segment(
                 replaceVariableReferences(line, variableDefinitions),
