@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:orientation="vertical" android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <TextView
+    android:id="@+id/textView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Enter the input URL"
+    android:textAppearance="@android:style/TextAppearance.DeviceDefault" />
+
+  <EditText
+    android:id="@+id/urlInput"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:ems="10"
+    android:inputType="textUri"
+    android:text="" />
+
+  <Button
+    android:id="@+id/playButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="PLAY" />
+</LinearLayout>

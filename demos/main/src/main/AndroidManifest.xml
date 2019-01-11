@@ -35,7 +35,7 @@
       android:allowBackup="false"
       android:name="com.google.android.exoplayer2.demo.DemoApplication">
 
-    <activity android:name="com.google.android.exoplayer2.demo.SampleChooserActivity"
+    <activity android:name="com.google.android.exoplayer2.demo.URLInputActivity"
         android:configChanges="keyboardHidden"
         android:label="@string/application_name">
       <intent-filter>
