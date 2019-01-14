@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+  <PreferenceCategory
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:title="@string/latency_settings">
+
+    <EditTextPreference
+      android:key="@string/key_target_buffersize"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:inputType="number"
+      android:defaultValue="@string/default_target_buffersize"
+      android:title="@string/target_buffersize" />
+  </PreferenceCategory>
+</PreferenceScreen>

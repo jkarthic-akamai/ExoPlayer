@@ -69,4 +69,13 @@
 
   <string name="random_abr">Enable random ABR</string>
 
+  <string name="title_activity_settings">Settings</string>
+  <string name="summary_prefix">Current value : </string>
+  <string name="latency_settings">Latency Settings</string>
+  <string name="key_target_buffersize">target_buffersize</string>
+  <string name="target_buffersize">Target Buffersize (in ms)</string>
+  <string name="min_target_buffersize">1000</string>
+  <string name="default_target_buffersize">2500</string>
+  <string name="max_target_buffersize">5000</string>
+
 </resources>

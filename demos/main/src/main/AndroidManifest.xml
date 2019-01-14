@@ -56,6 +56,14 @@
         <data android:pathPattern=".*\\.exolist\\.json"/>
       </intent-filter>
     </activity>
+    <activity
+      android:name="com.google.android.exoplayer2.demo.SettingsActivity"
+      android:label="@string/title_activity_settings"
+      android:parentActivityName="com.google.android.exoplayer2.demo.URLInputActivity">
+      <meta-data
+        android:name="android.support.PARENT_ACTIVITY"
+        android:value="com.google.android.exoplayer2.demo.URLInputActivity" />
+    </activity>
 
     <activity android:name="com.google.android.exoplayer2.demo.PlayerActivity"
         android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"

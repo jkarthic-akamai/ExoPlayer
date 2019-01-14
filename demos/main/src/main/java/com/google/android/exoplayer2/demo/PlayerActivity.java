@@ -18,9 +18,11 @@ package com.google.android.exoplayer2.demo;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Pair;
@@ -35,6 +37,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.C.ContentType;
+import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.PlaybackPreparer;
@@ -71,6 +74,7 @@ import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.ui.TrackSelectionView;
 import com.google.android.exoplayer2.ui.spherical.SphericalSurfaceView;
 import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultAllocator;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.ErrorMessageProvider;
 import com.google.android.exoplayer2.util.EventLogger;
@@ -419,12 +423,22 @@ public class PlayerActivity extends Activity
       trackSelector.setParameters(trackSelectorParameters);
       lastSeenTrackGroupArray = null;
 
+      SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+      int targetBuffersize = Integer.parseInt(sharedPrefs.getString(
+          getResources().getString(R.string.key_target_buffersize), getResources().getString(R.string.default_target_buffersize)));
+
+      DefaultLoadControl.Builder loadControlBuilder = new DefaultLoadControl.Builder();
+      loadControlBuilder.setBufferDurationsMs(targetBuffersize, 10000, targetBuffersize, targetBuffersize);
+
       player =
           ExoPlayerFactory.newSimpleInstance(
-              /* context= */ this, renderersFactory, trackSelector, drmSessionManager);
+              /* context= */ this, renderersFactory, trackSelector,
+              loadControlBuilder.createDefaultLoadControl(), drmSessionManager);
       player.addListener(new PlayerEventListener());
       player.setPlayWhenReady(startAutoPlay);
-      player.addAnalyticsListener(new EventLogger(trackSelector));
+      LatencyControl analyticsListener = new LatencyControl(trackSelector, targetBuffersize);
+      player.addAnalyticsListener(analyticsListener);
+      analyticsListener.setPlayer(player);
       playerView.setPlayer(player);
       playerView.setPlaybackPreparer(this);
       debugViewHelper = new DebugTextViewHelper(player, debugTextView);
