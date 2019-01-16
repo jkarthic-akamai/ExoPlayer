@@ -19,9 +19,11 @@ import android.net.Uri;
 import android.os.SystemClock;
 import android.support.annotation.CheckResult;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.SeekParameters;
+import com.google.android.exoplayer2.SntpClient;
 import com.google.android.exoplayer2.extractor.ChunkIndex;
 import com.google.android.exoplayer2.extractor.Extractor;
 import com.google.android.exoplayer2.extractor.SeekMap;
@@ -88,7 +90,8 @@ public class DefaultDashChunkSource implements DashChunkSource {
         boolean enableEventMessageTrack,
         boolean enableCea608Track,
         @Nullable PlayerTrackEmsgHandler playerEmsgHandler,
-        @Nullable TransferListener transferListener) {
+        @Nullable TransferListener transferListener,
+        SntpClient ntpclient) {
       DataSource dataSource = dataSourceFactory.createDataSource();
       if (transferListener != null) {
         dataSource.addTransferListener(transferListener);
@@ -105,7 +108,8 @@ public class DefaultDashChunkSource implements DashChunkSource {
           maxSegmentsPerLoad,
           enableEventMessageTrack,
           enableCea608Track,
-          playerEmsgHandler);
+          playerEmsgHandler,
+          ntpclient);
     }
 
   }
@@ -126,6 +130,7 @@ public class DefaultDashChunkSource implements DashChunkSource {
   private IOException fatalError;
   private boolean missingLastSegment;
   private long liveEdgeTimeUs;
+  private SntpClient ntpclient;
 
   /**
    * @param manifestLoaderErrorThrower Throws errors affecting loading of manifests.
@@ -159,7 +164,8 @@ public class DefaultDashChunkSource implements DashChunkSource {
       int maxSegmentsPerLoad,
       boolean enableEventMessageTrack,
       boolean enableCea608Track,
-      @Nullable PlayerTrackEmsgHandler playerTrackEmsgHandler) {
+      @Nullable PlayerTrackEmsgHandler playerTrackEmsgHandler,
+      SntpClient ntpclient) {
     this.manifestLoaderErrorThrower = manifestLoaderErrorThrower;
     this.manifest = manifest;
     this.adaptationSetIndices = adaptationSetIndices;
@@ -170,6 +176,7 @@ public class DefaultDashChunkSource implements DashChunkSource {
     this.elapsedRealtimeOffsetMs = elapsedRealtimeOffsetMs;
     this.maxSegmentsPerLoad = maxSegmentsPerLoad;
     this.playerTrackEmsgHandler = playerTrackEmsgHandler;
+    this.ntpclient = ntpclient;
 
     long periodDurationUs = manifest.getPeriodDurationUs(periodIndex);
     liveEdgeTimeUs = C.TIME_UNSET;
@@ -264,7 +271,13 @@ public class DefaultDashChunkSource implements DashChunkSource {
       return;
     }
 
-    long nowUnixTimeUs = getNowUnixTimeUs();
+    long nowUnixTimeUs;
+    if (ntpclient.isInitialized()) {
+      nowUnixTimeUs = C.msToUs(ntpclient.getNtpTime() + SystemClock.elapsedRealtime() - ntpclient.getNtpTimeReference());
+    } else {
+      Log.d("Latency", "NTP client NOT initialized" );
+      nowUnixTimeUs = getNowUnixTimeUs();
+    }
     MediaChunk previous = queue.isEmpty() ? null : queue.get(queue.size() - 1);
     MediaChunkIterator[] chunkIterators = new MediaChunkIterator[trackSelection.length()];
     for (int i = 0; i < chunkIterators.length; i++) {
@@ -760,7 +773,6 @@ public class DefaultDashChunkSource implements DashChunkSource {
       if (availableSegmentCount == DashSegmentIndex.INDEX_UNBOUNDED) {
         // The index is itself unbounded. We need to use the current time to calculate the range of
         // available segments.
-        // TODO : System clock may not be in sync with the UTC time. Need an NTP-synced time here.
         long liveEdgeTimeUs = nowUnixTimeUs - C.msToUs(manifest.availabilityStartTimeMs);
         if (representation instanceof Representation.MultiSegmentRepresentation) {
           liveEdgeTimeUs +=

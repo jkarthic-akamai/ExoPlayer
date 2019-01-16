@@ -22,6 +22,7 @@ import android.util.SparseIntArray;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.SeekParameters;
+import com.google.android.exoplayer2.SntpClient;
 import com.google.android.exoplayer2.source.CompositeSequenceableLoaderFactory;
 import com.google.android.exoplayer2.source.EmptySampleStream;
 import com.google.android.exoplayer2.source.MediaPeriod;
@@ -84,6 +85,7 @@ import java.util.List;
   private int periodIndex;
   private List<EventStream> eventStreams;
   private boolean notifiedReadingStarted;
+  private SntpClient ntpclient;
 
   public DashMediaPeriod(
       int id,
@@ -97,7 +99,8 @@ import java.util.List;
       LoaderErrorThrower manifestLoaderErrorThrower,
       Allocator allocator,
       CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory,
-      PlayerEmsgCallback playerEmsgCallback) {
+      PlayerEmsgCallback playerEmsgCallback,
+      SntpClient ntpclient) {
     this.id = id;
     this.manifest = manifest;
     this.periodIndex = periodIndex;
@@ -109,6 +112,7 @@ import java.util.List;
     this.manifestLoaderErrorThrower = manifestLoaderErrorThrower;
     this.allocator = allocator;
     this.compositeSequenceableLoaderFactory = compositeSequenceableLoaderFactory;
+    this.ntpclient = ntpclient;
     playerEmsgHandler = new PlayerEmsgHandler(manifest, playerEmsgCallback, allocator);
     sampleStreams = newSampleStreamArray(0);
     eventSampleStreams = new EventSampleStream[0];
@@ -597,7 +601,8 @@ import java.util.List;
             enableEventMessageTrack,
             enableCea608Track,
             trackPlayerEmsgHandler,
-            transferListener);
+            transferListener,
+            ntpclient);
     ChunkSampleStream<DashChunkSource> stream =
         new ChunkSampleStream<>(
             trackGroupInfo.trackType,

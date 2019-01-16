@@ -17,6 +17,7 @@ package com.google.android.exoplayer2.source.dash;
 
 import android.os.SystemClock;
 import android.support.annotation.Nullable;
+import com.google.android.exoplayer2.SntpClient;
 import com.google.android.exoplayer2.source.chunk.ChunkSource;
 import com.google.android.exoplayer2.source.dash.PlayerEmsgHandler.PlayerTrackEmsgHandler;
 import com.google.android.exoplayer2.source.dash.manifest.DashManifest;
@@ -60,7 +61,8 @@ public interface DashChunkSource extends ChunkSource {
         boolean enableEventMessageTrack,
         boolean enableCea608Track,
         @Nullable PlayerTrackEmsgHandler playerEmsgHandler,
-        @Nullable TransferListener transferListener);
+        @Nullable TransferListener transferListener,
+        SntpClient ntpclient);
   }
 
   /**

@@ -24,6 +24,7 @@ import android.util.SparseArray;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayerLibraryInfo;
 import com.google.android.exoplayer2.ParserException;
+import com.google.android.exoplayer2.SntpClient;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.offline.FilteringManifestParser;
 import com.google.android.exoplayer2.offline.StreamKey;
@@ -401,6 +402,8 @@ public final class DashMediaSource extends BaseMediaSource {
 
   private int firstPeriodId;
 
+  private SntpClient ntpclient;
+
   /**
    * Constructs an instance to play a given {@link DashManifest}, which must be static.
    *
@@ -600,6 +603,14 @@ public final class DashMediaSource extends BaseMediaSource {
     manifestUriLock = new Object();
     periodsById = new SparseArray<>();
     playerEmsgCallback = new DefaultPlayerEmsgCallback();
+    ntpclient = new SntpClient();
+    Thread ntpInitializer = new Thread() {
+      @Override
+      public void run () {
+        ntpclient.initialize("pool.ntp.org", 5000);
+      }
+    };
+    ntpInitializer.start();
     expiredManifestPublishTimeUs = C.TIME_UNSET;
     if (sideloadedManifest) {
       Assertions.checkState(!manifest.dynamic);
@@ -671,7 +682,8 @@ public final class DashMediaSource extends BaseMediaSource {
             manifestLoadErrorThrower,
             allocator,
             compositeSequenceableLoaderFactory,
-            playerEmsgCallback);
+            playerEmsgCallback,
+            ntpclient);
     periodsById.put(mediaPeriod.id, mediaPeriod);
     return mediaPeriod;
   }
